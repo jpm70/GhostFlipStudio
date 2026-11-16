@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GhostFlip Studio — Creador de Flipbooks 3D</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+    h1, h2, h3, .font-display { font-family: 'Outfit', system-ui, sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+    .canvas-grid-pattern {
+      background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .stf__parent { position: relative; display: block; margin: 0 auto !important; user-select: none; }
+    .stf__wrapper { position: relative; margin: 0 auto !important; }
+    .my-page {
+      overflow: hidden !important;
+      box-sizing: border-box;
+      background-color: #0f172a;
+      user-select: none;
+    }
+    .page-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden !important;
+      box-sizing: border-box;
+      background-color: #0f172a;
+    }
+    .gf-spine-shadow {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 48px;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 200;
+      background: linear-gradient(
+        to right,
+        rgba(2, 6, 23, 0) 0%,
+        rgba(2, 6, 23, 0.2) 28%,
+        rgba(2, 6, 23, 0.62) 50%,
+        rgba(2, 6, 23, 0.2) 72%,
+        rgba(2, 6, 23, 0) 100%
+      );
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 flex">
+  <!-- Sidebar Izquierdo -->
+  <aside id="sidebar" class="w-80 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col h-full">
+    <div class="px-5 py-4 border-b border-slate-800 flex items-center gap-3">
+      <a href="https://www.unfantasmaenelsistema.com/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 group min-w-0">
+        <div class="w-11 h-11 rounded-lg bg-slate-800/80 border border-slate-700 p-1 flex items-center justify-center shrink-0">
+          <img src="./assets/aistudio/icono_81a3db5b.png" alt="Logo Un Fantasma en el Sistema" class="w-full h-full object-contain" />
+        </div>
+        <div class="min-w-0">
+          <span class="font-display text-lg font-bold text-slate-100 block truncate group-hover:text-cyan-400 transition-colors">GhostFlip Studio</span>
+          <span class="text-xs text-slate-400 block truncate">unfantasmaenelsistema.com</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="flex-1 overflow-y-auto divide-y divide-slate-800">
+      <!-- Acordeón: Carga de Archivos -->
+      <section>
+        <button type="button" data-accordion="upload" class="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40">
+          <span class="flex items-center gap-2.5 text-sm font-semibold"><i class="fa-solid fa-file-arrow-up text-cyan-400 w-4 text-center"></i>Carga de Archivos</span>
+          <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform rotate-180"></i>
+        </button>
+        <div id="panel-upload" class="px-5 pb-5 pt-1 space-y-3">
+          <input id="file-input" type="file" accept=".pdf,.html,.htm,.pptx" class="hidden" />
+          <div id="dropzone" class="rounded-lg border border-dashed border-slate-700 bg-slate-950/50 p-4 text-center cursor-pointer hover:border-cyan-400 transition-colors">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl text-cyan-400 mb-2 block"></i>
+            <p class="text-sm font-medium text-slate-200">Arrastra tu documento aquí</p>
+            <p class="text-xs font-mono text-slate-500 mt-1">PDF · HTML · PPTX</p>
+          </div>
+          <div id="sidebar-progress-box" class="hidden rounded-lg border border-cyan-500/30 bg-slate-950/90 p-3 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span id="sidebar-progress-label" class="text-cyan-300 truncate">Procesando...</span>
+              <span id="sidebar-progress-pct" class="font-mono text-slate-300">0%</span>
+            </div>
+            <div class="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+              <div id="sidebar-progress-bar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-200" style="width: 0%"></div>
+            </div>
+          </div>
+          <p id="file-status" class="text-xs font-mono text-slate-400"></p>
+        </div>
+      </section>
+
+      <!-- Acordeón: Configuración de Libro -->
+      <section>
+        <button type="button" data-accordion="book" class="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40">
+          <span class="flex items-center gap-2.5 text-sm font-semibold"><i class="fa-solid fa-book-open text-cyan-400 w-4 text-center"></i>Configuración de Libro</span>
+          <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform rotate-180"></i>
+        </button>
+        <div id="panel-book" class="px-5 pb-5 pt-1 space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="cfg-width" class="block text-xs text-slate-300 mb-1">Ancho (px)</label>
+              <input id="cfg-width" type="number" value="840" min="480" max="1100" class="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono text-slate-100" />
+            </div>
+            <div>
+              <label for="cfg-height" class="block text-xs text-slate-300 mb-1">Alto (px)</label>
+              <input id="cfg-height" type="number" value="580" min="360" max="820" class="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono text-slate-100" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-1 p-1 rounded-lg bg-slate-950 border border-slate-800">
+            <button type="button" data-cover="hard" class="cover-btn px-3 py-2 text-xs font-medium rounded-md bg-slate-800 text-cyan-300 border border-cyan-500/40">Tapa Dura</button>
+            <button type="button" data-cover="soft" class="cover-btn px-3 py-2 text-xs font-medium rounded-md text-slate-400 border border-transparent">Tapa Blanda</button>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1">
+              <label for="cfg-fliptime" class="text-slate-300">Velocidad de pasada</label>
+              <span id="fliptime-label" class="font-mono text-cyan-300">700 ms</span>
+            </div>
+            <input id="cfg-fliptime" type="range" min="250" max="1500" step="50" value="700" class="w-full accent-cyan-400 cursor-pointer" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Acordeón: Apariencia -->
+      <section>
+        <button type="button" data-accordion="appearance" class="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40">
+          <span class="flex items-center gap-2.5 text-sm font-semibold"><i class="fa-solid fa-palette text-cyan-400 w-4 text-center"></i>Apariencia</span>
+          <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+        </button>
+        <div id="panel-appearance" class="hidden px-5 pb-5 pt-1 space-y-4">
+          <div class="flex items-center justify-between">
+            <label for="cfg-bgcolor" class="text-xs text-slate-300">Color de fondo</label>
+            <input id="cfg-bgcolor" type="color" value="#020617" class="h-8 w-10 rounded border border-slate-700 bg-slate-950 cursor-pointer" />
+          </div>
+          <div>
+            <label for="cfg-bgimage" class="block text-xs text-slate-300 mb-1">Imagen de fondo</label>
+            <input id="cfg-bgimage" type="file" accept="image/*" class="text-xs text-slate-400 w-full" />
+          </div>
+          <label class="flex items-center justify-between text-sm text-slate-200 cursor-pointer">
+            <span>Sombras dinámicas</span>
+            <input id="cfg-shadows" type="checkbox" checked class="accent-emerald-400 w-4 h-4" />
+          </label>
+        </div>
+      </section>
+
+      <!-- Acordeón: Controles -->
+      <section>
+        <button type="button" data-accordion="controls" class="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40">
+          <span class="flex items-center gap-2.5 text-sm font-semibold"><i class="fa-solid fa-sliders text-cyan-400 w-4 text-center"></i>Controles</span>
+          <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+        </button>
+        <div id="panel-controls" class="hidden px-5 pb-5 pt-1 space-y-3">
+          <label class="flex items-center justify-between text-sm text-slate-200 cursor-pointer">
+            <span>Habilitar sonido de página</span>
+            <input id="cfg-sound" type="checkbox" checked class="accent-emerald-400 w-4 h-4" />
+          </label>
+          <label class="flex items-center justify-between text-sm text-slate-200 cursor-pointer">
+            <span>Autoplay</span>
+            <input id="cfg-autoplay" type="checkbox" class="accent-emerald-400 w-4 h-4" />
+          </label>
+          <label class="flex items-center justify-between text-sm text-slate-200 cursor-pointer">
+            <span>Habilitar Zoom</span>
+            <input id="cfg-zoom" type="checkbox" checked class="accent-emerald-400 w-4 h-4" />
+          </label>
+        </div>
+      </section>
+
+      <!-- Acordeón: Marca Blanca y SEO -->
+      <section>
+        <button type="button" data-accordion="branding" class="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40">
+          <span class="flex items-center gap-2.5 text-sm font-semibold"><i class="fa-solid fa-shield-halved text-cyan-400 w-4 text-center"></i>Marca Blanca y SEO</span>
+          <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+        </button>
+        <div id="panel-branding" class="hidden px-5 pb-5 pt-1 space-y-3">
+          <div>
+            <label for="cfg-brand-logo" class="block text-xs text-slate-300 mb-1">Logo Corporativo</label>
+            <input id="cfg-brand-logo" type="file" accept="image/*" class="text-xs text-slate-400 w-full" />
+          </div>
+          <div>
+            <label for="cfg-brand-url" class="block text-xs text-slate-300 mb-1">Enlace del Logo</label>
+            <input id="cfg-brand-url" type="url" value="https://www.unfantasmaenelsistema.com/" placeholder="https://ghostacademy.unfantasmaenelsistema.com" class="w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-100" />
+          </div>
+          <div class="grid grid-cols-2 gap-1 p-1 rounded-lg bg-slate-950 border border-slate-800">
+            <button type="button" data-logopos="top-left" class="logopos-btn px-2 py-1 text-xs rounded bg-slate-800 text-cyan-300">Sup. Izq.</button>
+            <button type="button" data-logopos="top-right" class="logopos-btn px-2 py-1 text-xs rounded text-slate-400">Sup. Der.</button>
+          </div>
+          <div class="pt-2 border-t border-slate-800 space-y-2">
+            <span class="block text-xs font-semibold text-slate-200">Metadatos SEO</span>
+            <input id="cfg-seo-title" type="text" value="Mi Revista Interactiva 3D" placeholder="Título de la Revista" class="w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-100" />
+            <input id="cfg-seo-desc" type="text" value="Publicación interactiva generada con GhostFlip Studio" placeholder="Descripción" class="w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-100" />
+            <input id="cfg-seo-keywords" type="text" value="flipbook, revista digital, ghostflip" placeholder="Keywords" class="w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-100" />
+          </div>
+          <div class="pt-2 border-t border-slate-800 space-y-2">
+            <label class="flex items-center justify-between text-xs text-slate-200 cursor-pointer">
+              <span>Protección por Contraseña</span>
+              <input id="cfg-pw-enable" type="checkbox" class="accent-emerald-400 w-4 h-4" />
+            </label>
+            <input id="cfg-pw-value" type="password" placeholder="Contraseña de acceso..." class="hidden w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-mono text-slate-100" />
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="px-5 py-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+      <a href="https://www.unfantasmaenelsistema.com/" target="_blank" rel="noopener noreferrer" class="hover:text-cyan-400 transition-colors">unfantasmaenelsistema.com</a>
+      <span class="font-mono text-slate-500">GitHub Pages</span>
+    </div>
+  </aside>
+
+  <!-- Main Canvas Derecho -->
+  <main class="flex-1 flex flex-col min-w-0 h-full">
+    <header id="toolbar" class="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+      <div>
+        <h1 class="font-display text-base font-semibold text-slate-100">GhostFlip Studio</h1>
+        <p id="stage-specs" class="text-xs font-mono text-slate-400">840 × 580 px · Tapa Dura</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="toolbar-zoom" class="flex items-center gap-1 px-1.5 py-1 rounded-lg border border-slate-800 bg-slate-950">
+          <button id="zoom-out" type="button" class="h-7 w-7 rounded text-slate-300 hover:text-cyan-300 hover:bg-slate-800" aria-label="Alejar zoom">
+            <i class="fa-solid fa-magnifying-glass-minus text-xs"></i>
+          </button>
+          <button id="zoom-reset" type="button" class="px-2 h-7 rounded text-xs font-mono text-cyan-300 hover:bg-slate-800">100%</button>
+          <button id="zoom-in" type="button" class="h-7 w-7 rounded text-slate-300 hover:text-cyan-300 hover:bg-slate-800" aria-label="Acercar zoom">
+            <i class="fa-solid fa-magnifying-glass-plus text-xs"></i>
+          </button>
+        </div>
+        <button id="btn-edit-links" type="button" aria-pressed="false" class="px-3.5 py-2 rounded-lg border border-slate-700 bg-slate-950 text-xs font-medium text-slate-200 hover:border-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap">
+          <i class="fa-solid fa-link mr-1.5"></i>Modo Edición de Enlaces
+        </button>
+        <button id="btn-preview" type="button" class="px-3.5 py-2 rounded-lg border border-slate-700 bg-slate-950 text-xs font-medium text-slate-200 hover:border-cyan-400 hover:text-cyan-300 transition-colors">
+          <i class="fa-solid fa-expand mr-1.5"></i>Previsualizar
+        </button>
+        <button id="btn-export" type="button" class="px-4 py-2 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs font-semibold transition-colors">
+          <i class="fa-solid fa-file-export mr-1.5"></i>Exportar
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Canvas (Capa 1 Outer) -->
+    <div id="canvas-stage" class="flex flex-col items-center justify-center w-full h-full min-h-0 flex-1 relative canvas-grid-pattern bg-cover bg-center p-4 sm:p-6 overflow-hidden transition-colors duration-200">
+      <!-- Loading Overlay -->
+      <div id="loading-modal" class="hidden absolute inset-0 z-40 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <i class="fa-solid fa-gear fa-spin"></i>
+            </div>
+            <div class="min-w-0">
+              <h2 class="font-display text-base font-semibold text-white">Procesando documento</h2>
+              <p id="modal-file-name" class="text-xs text-slate-400 truncate"></p>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span id="modal-progress-label" class="text-slate-300">Iniciando...</span>
+              <span id="modal-progress-pct" class="font-mono text-cyan-300">0%</span>
+            </div>
+            <div class="h-2.5 w-full rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
+              <div id="modal-progress-bar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-200" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logo Corporativo Flotante -->
+      <a id="floating-brand-link" href="https://www.unfantasmaenelsistema.com/" target="_blank" rel="noopener noreferrer" class="absolute top-4 left-4 z-30 h-11 w-11 rounded-lg bg-slate-900/85 border border-slate-700 p-1.5 flex items-center justify-center backdrop-blur hover:border-cyan-400 transition-colors">
+        <img id="floating-brand-img" src="./assets/aistudio/icono_81a3db5b.png" alt="Logo corporativo" class="w-full h-full object-contain" />
+      </a>
+
+      <!-- Classic Centered Flexbox #canvas-wrapper + #flipbook-container -->
+      <div id="stage-viewport" class="w-full h-full flex-1 min-h-0 flex items-center justify-center relative z-10 overflow-hidden">
+        <button id="btn-prev-side" type="button" class="hidden sm:flex absolute left-3 z-20 h-11 w-11 rounded-full border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-cyan-300 hover:border-cyan-400/60 items-center justify-center shrink-0">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <div id="zoom-wrapper" style="max-width:90%;max-height:90%;aspect-ratio:840/580;" class="relative flex items-center justify-center transition-transform duration-200">
+          <div id="book-container-layer" class="w-full h-full relative">
+            <div id="flipbook-mount" class="w-full h-full relative cursor-grab active:cursor-grabbing"></div>
+            <div id="spine-shadow" class="gf-spine-shadow hidden" aria-hidden="true"></div>
+            <canvas id="hotspot-canvas" class="hidden absolute inset-0 w-full h-full z-30 cursor-crosshair"></canvas>
+          </div>
+        </div>
+
+        <button id="btn-next-side" type="button" class="hidden sm:flex absolute right-3 z-20 h-11 w-11 rounded-full border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-cyan-300 hover:border-cyan-400/60 items-center justify-center shrink-0">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- Modal Flotante URL de Destino (Hotspots Fase 8) -->
+      <div id="hotspot-url-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-sm">
+        <form id="hotspot-url-form" class="w-full max-w-sm rounded-xl border border-cyan-500/40 bg-slate-900 p-5 shadow-2xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-display text-sm font-semibold text-white"><i class="fa-solid fa-link text-cyan-400 mr-2"></i>URL de destino</h3>
+            <span id="hotspot-page-badge" class="text-[11px] font-mono text-slate-400"></span>
+          </div>
+          <input id="hotspot-url-input" type="text" required placeholder="https://unfantasmaenelsistema.com" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono text-slate-100 focus:border-cyan-400 focus:outline-none" />
+          <div class="flex justify-end gap-2">
+            <button id="hotspot-cancel-btn" type="button" class="px-3.5 py-2 rounded-lg border border-slate-700 text-xs text-slate-300 hover:text-white">Cancelar</button>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs font-semibold">Guardar enlace</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tira de Miniaturas -->
+      <div id="thumb-strip" class="hidden relative z-20 mt-2 w-full max-w-4xl rounded-xl border border-slate-800 bg-slate-900/95 p-2.5 gap-2.5 overflow-x-auto"></div>
+
+      <!-- Barra de Controles Inferior -->
+      <div class="relative z-20 mt-3 flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-900/95 border border-slate-800">
+        <button id="btn-prev-page" type="button" class="text-xs text-slate-300 hover:text-cyan-300 px-2 py-1"><i class="fa-solid fa-chevron-left"></i></button>
+        <span id="page-indicator" class="text-xs font-mono text-slate-300">Pág. 1 / 4</span>
+        <button id="btn-next-page" type="button" class="text-xs text-slate-300 hover:text-cyan-300 px-2 py-1"><i class="fa-solid fa-chevron-right"></i></button>
+        <button id="btn-thumbnails" type="button" class="text-xs text-slate-300 hover:text-cyan-300 pl-3 border-l border-slate-800 flex items-center gap-1.5">
+          <i class="fa-solid fa-table-cells"></i><span>Miniaturas</span>
+        </button>
+        <button id="btn-fullscreen" type="button" class="text-xs text-slate-300 hover:text-cyan-300 pl-3 border-l border-slate-800" aria-label="Pantalla completa" title="Pantalla completa">
+          <i id="fs-icon" class="fa-solid fa-expand"></i>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    window.flipbookPages = [];
+    window.hotspotsData = [];
+    let linkEditMode = false;
+    let currentPageElements = [];
+    let pageFlipInstance = null;
+    let coverMode = 'hard';
+    let zoomLevel = 100;
+    let fitScale = 1;
+    let panX = 0, panY = 0, isPanning = false, startX = 0, startY = 0;
+    let savedPageIndex = 0;
+    let autoplayTimer = null;
+
+    function createPaperFlipWavBase64() {
+      const sampleRate = 16000, numSamples = Math.floor(sampleRate * 0.14), dataSize = numSamples * 2;
+      const buffer = new ArrayBuffer(44 + dataSize), view = new DataView(buffer);
+      const writeStr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+      writeStr(0, 'RIFF'); view.setUint32(4, 36 + dataSize, true); writeStr(8, 'WAVE');
+      writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+      writeStr(36, 'data'); view.setUint32(40, dataSize, true);
+      let seed = 1337, prev = 0;
+      for (let i = 0; i < numSamples; i++) {
+        seed = (seed * 16807) % 2147483647;
+        prev = prev * 0.58 + ((seed / 2147483647) * 2 - 1) * 0.42;
+        const t = i / numSamples, env = Math.sin(t * Math.PI) * Math.pow(1 - t, 1.35);
+        view.setInt16(44 + i * 2, Math.floor(Math.max(-1, Math.min(1, prev * env * 0.65)) * 32767), true);
+      }
+      const bytes = new Uint8Array(buffer);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return 'data:audio/wav;base64,' + btoa(bin);
+    }
+    const pageFlipAudio = new Audio(createPaperFlipWavBase64());
+    pageFlipAudio.volume = 0.45;
+    function playFlipSound() {
+      if (!document.getElementById('cfg-sound').checked) return;
+      pageFlipAudio.currentTime = 0;
+      pageFlipAudio.play().catch(() => {});
+    }
+
+    class DocumentParser {
+      constructor(onProgress) { this.onProgress = onProgress; }
+      async parseFile(file) {
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (ext === 'pdf') return this.parsePdf(file);
+        if (ext === 'pptx') return this.parsePptx(file);
+        throw new Error('Selecciona un archivo PDF o PPTX.');
+      }
+      async parsePdf(file) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const pdfDoc = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+        const total = pdfDoc.numPages, images = [];
+        const hiddenCanvas = document.createElement('canvas');
+        hiddenCanvas.style.display = 'none';
+        const ctx = hiddenCanvas.getContext('2d');
+        for (let i = 1; i <= total; i++) {
+          this.onProgress({ fileName: file.name, percent: Math.round(((i - 0.5) / total) * 100), text: `Procesando página ${i} de ${total}...` });
+          const page = await pdfDoc.getPage(i);
+          const viewport = page.getViewport({ scale: 1.5 });
+          hiddenCanvas.width = viewport.width;
+          hiddenCanvas.height = viewport.height;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          images.push(hiddenCanvas.toDataURL('image/jpeg', 0.9));
+          this.onProgress({ fileName: file.name, percent: Math.round((i / total) * 100), text: `Página ${i} de ${total} lista` });
+        }
+        window.flipbookPages = images;
+        window.dispatchEvent(new CustomEvent('documentReady', { detail: { pages: images, fileName: file.name, format: 'PDF' } }));
+        return images;
+      }
+      async parsePptx(file) {
+        const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+        const mediaPaths = Object.keys(zip.files).filter((p) => p.startsWith('ppt/media/') && !zip.files[p].dir);
+        const images = [];
+        for (let i = 0; i < mediaPaths.length; i++) {
+          const path = mediaPaths[i];
+          const b64 = await zip.files[path].async('base64');
+          const mime = path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+          images.push(`data:${mime};base64,${b64}`);
+          this.onProgress({ fileName: file.name, percent: Math.round(((i + 1) / mediaPaths.length) * 100), text: `Extrayendo imagen ${i + 1} de ${mediaPaths.length}...` });
+        }
+        window.flipbookPages = images;
+        window.dispatchEvent(new CustomEvent('documentReady', { detail: { pages: images, fileName: file.name, format: 'PPTX' } }));
+        return images;
+      }
+    }
+
+    const stageViewport = document.getElementById('stage-viewport');
+    const zoomWrapper = document.getElementById('zoom-wrapper');
+    const bookContainerLayer = document.getElementById('book-container-layer');
+    const flipbookMount = document.getElementById('flipbook-mount');
+    const spineShadow = document.getElementById('spine-shadow');
+    const thumbStrip = document.getElementById('thumb-strip');
+
+    function applyTransform() {
+      if (zoomLevel <= 100) { panX = 0; panY = 0; }
+      const scale = zoomLevel / 100;
+      zoomWrapper.style.transform = zoomLevel !== 100
+        ? `translate(${panX}px, ${panY}px) scale(${scale})`
+        : 'none';
+      stageViewport.classList.toggle('cursor-grab', zoomLevel > 100 && !isPanning);
+      stageViewport.classList.toggle('cursor-grabbing', zoomLevel > 100 && isPanning);
+      flipbookMount.style.pointerEvents = zoomLevel > 100 ? 'none' : 'auto';
+      document.getElementById('zoom-reset').textContent = `${zoomLevel}%`;
+    }
+
+    function resizeFlipbook() {
+      const totalW = Number(document.getElementById('cfg-width').value) || 840;
+      const pageH = Number(document.getElementById('cfg-height').value) || 580;
+      const rect = stageViewport.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const maxAvailW = Math.max(240, rect.width * 0.9 - 104);
+      const maxAvailH = Math.max(200, rect.height * 0.9);
+      const ratio = Math.min(1, maxAvailW / totalW, maxAvailH / pageH);
+      zoomWrapper.style.width = Math.max(400, Math.round(totalW * ratio)) + 'px';
+      zoomWrapper.style.height = Math.max(290, Math.round(pageH * ratio)) + 'px';
+      zoomWrapper.style.aspectRatio = `${totalW} / ${pageH}`;
+      applyTransform();
+    }
+
+    new ResizeObserver(() => {
+      resizeFlipbook();
+      window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+    }).observe(stageViewport);
+    window.addEventListener('resize', resizeFlipbook);
+
+    stageViewport.addEventListener('mousedown', (e) => {
+      if (zoomLevel <= 100 || e.target.closest('button')) return;
+      isPanning = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+      zoomWrapper.style.transition = 'none';
+      applyTransform();
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      applyTransform();
+    });
+    window.addEventListener('mouseup', () => {
+      if (!isPanning) return;
+      isPanning = false;
+      zoomWrapper.style.transition = 'transform 200ms ease-out';
+      applyTransform();
+    });
+
+    function rebuildFlipbook(resetPage = false) {
+      if (pageFlipInstance) {
+        savedPageIndex = resetPage ? 0 : pageFlipInstance.getCurrentPageIndex();
+        try { pageFlipInstance.destroy(); } catch {}
+        pageFlipInstance = null;
+      } else if (resetPage) {
+        savedPageIndex = 0;
+      }
+      flipbookMount.innerHTML = '';
+
+      const totalW = Number(document.getElementById('cfg-width').value) || 840;
+      const pageH = Number(document.getElementById('cfg-height').value) || 580;
+      const singleW = Math.max(200, Math.round(totalW / 2));
+      const shadows = document.getElementById('cfg-shadows').checked;
+      const flippingTime = Number(document.getElementById('cfg-fliptime').value) || 700;
+
+      document.getElementById('stage-specs').textContent =
+        `${totalW} × ${pageH} px · ${coverMode === 'hard' ? 'Tapa Dura' : 'Tapa Blanda'}`;
+
+      resizeFlipbook();
+
+      const bookEl = document.createElement('div');
+      bookEl.id = 'flipbook';
+      bookEl.style.width = '100%';
+      bookEl.style.height = '100%';
+
+      const base64Pages = window.flipbookPages;
+      const sourceItems = base64Pages.length
+        ? base64Pages.map((img, i) => ({ img, idx: i }))
+        : [
+            { title: 'GhostFlip Studio', text: 'Arrastra un archivo PDF o PPTX para renderizarlo en 3D.', idx: 0 },
+            { title: 'Motor StPageFlip', text: 'Escalado nativo stretch y sombras dinámicas activas.', idx: 1 },
+            { title: 'Hotspots y Marca Blanca', text: 'Añade enlaces sobre cualquier página y exporta tu revista.', idx: 2 },
+            { title: 'Contraportada', text: 'unfantasmaenelsistema.com', idx: 3 }
+          ];
+
+      const pageDivs = sourceItems.map((item, i) => {
+        const div = document.createElement('div');
+        const isHard = coverMode === 'hard' && (i === 0 || i === sourceItems.length - 1);
+        div.setAttribute('data-density', isHard ? 'hard' : 'soft');
+        div.className = 'page my-page border border-slate-700/80';
+        const content = document.createElement('div');
+        content.className = 'page-content w-full h-full overflow-hidden';
+        content.style.backgroundColor = '#0f172a';
+        if (item.img) {
+          content.dataset.bgSrc = item.img;
+          content.dataset.bgLoaded = '0';
+          content.style.backgroundSize = 'contain';
+          content.style.backgroundPosition = 'center';
+          content.style.backgroundRepeat = 'no-repeat';
+        } else {
+          content.className = 'page-content w-full h-full overflow-hidden p-8 flex flex-col justify-between text-slate-100 pointer-events-none';
+          content.innerHTML = `<span class="text-xs font-mono text-cyan-400">PÁGINA DE MUESTRA 0${i + 1}</span><div class="my-auto space-y-2"><h2 class="text-xl font-bold text-cyan-400">${item.title}</h2><p class="text-sm text-slate-300">${item.text}</p></div><span class="text-xs font-mono text-slate-500">GhostFlip Studio</span>`;
+        }
+        div.appendChild(content);
+        bookEl.appendChild(div);
+        return div;
+      });
+      currentPageElements = pageDivs;
+
+      flipbookMount.appendChild(bookEl);
+
+      pageFlipInstance = new window.St.PageFlip(bookEl, {
+        width: singleW, height: pageH, size: 'stretch',
+        minWidth: 200, maxWidth: singleW, minHeight: Math.min(290, pageH), maxHeight: pageH,
+        flippingTime: flippingTime, drawShadow: shadows,
+        maxShadowOpacity: shadows ? 0.5 : 0, usePortrait: false, autoSize: true, showCover: true, mobileScrollSupport: false, useMouseEvents: true
+      });
+      pageFlipInstance.loadFromHTML(pageDivs);
+      syncHotspotAnchors();
+
+      const restoredIdx = Math.min(savedPageIndex, pageDivs.length - 1);
+      if (restoredIdx > 0) pageFlipInstance.turnToPage(restoredIdx);
+
+      // Render thumbnails strip
+      thumbStrip.innerHTML = '';
+      sourceItems.forEach((item, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `shrink-0 w-16 h-20 rounded-md border overflow-hidden relative flex items-center justify-center bg-slate-950 ${idx === restoredIdx ? 'border-cyan-400 ring-2 ring-cyan-400/30' : 'border-slate-700'}`;
+        btn.innerHTML = (item.img ? `<img src="${item.img}" loading="lazy" class="w-full h-full object-contain" />` : `<span class="text-[9px] text-slate-300 px-1">${item.title}</span>`) +
+          `<span class="absolute bottom-1 right-1 px-1 rounded bg-slate-950/85 text-[9px] font-mono text-slate-300">${String(idx + 1).padStart(2, '0')}</span>`;
+        btn.addEventListener('click', () => pageFlipInstance.flip(idx, 'top'));
+        thumbStrip.appendChild(btn);
+      });
+
+      const syncLazyWindow = (curIdx) => {
+        const min = Math.max(0, curIdx - 1), max = Math.min(pageDivs.length - 1, curIdx + 2);
+        pageDivs.forEach((el, i) => {
+          const target = el.querySelector('.page-content') || el;
+          const src = target.dataset.bgSrc;
+          if (!src) return;
+          if (i >= min && i <= max) {
+            if (target.dataset.bgLoaded !== '1') { target.style.backgroundImage = `url("${src}")`; target.dataset.bgLoaded = '1'; }
+          } else if (target.dataset.bgLoaded === '1') {
+            target.style.backgroundImage = 'none'; target.dataset.bgLoaded = '0';
+          }
+        });
+      };
+
+      const updatePageChrome = (idx) => {
+        document.getElementById('page-indicator').textContent = `Pág. ${idx + 1} / ${pageDivs.length}`;
+        const openSpread = shadows && idx > 0 && idx < pageDivs.length - 1;
+        spineShadow.classList.toggle('hidden', !openSpread);
+        Array.from(thumbStrip.children).forEach((b, i) => {
+          b.className = `shrink-0 w-16 h-20 rounded-md border overflow-hidden relative flex items-center justify-center bg-slate-950 ${i === idx ? 'border-cyan-400 ring-2 ring-cyan-400/30' : 'border-slate-700'}`;
+        });
+        syncLazyWindow(idx);
+      };
+
+      updatePageChrome(restoredIdx);
+      pageFlipInstance.on('flip', (e) => {
+        savedPageIndex = e.data;
+        updatePageChrome(e.data);
+        playFlipSound();
+        if (linkEditMode) setTimeout(() => drawHotspotsOnCanvas(), 30);
+      });
+
+      resizeFlipbook();
+    }
+
+    document.getElementById('btn-thumbnails').addEventListener('click', () => {
+      const hidden = thumbStrip.classList.toggle('hidden');
+      thumbStrip.classList.toggle('flex', !hidden);
+      resizeFlipbook();
+    });
+
+    window.addEventListener('documentReady', (e) => {
+      document.getElementById('sidebar-progress-box').classList.add('hidden');
+      document.getElementById('loading-modal').classList.add('hidden');
+      document.getElementById('file-status').textContent = `${e.detail.fileName} · ${e.detail.pages.length} imágenes Base64`;
+      const first = e.detail.pages[0];
+      if (first) {
+        const probe = new Image();
+        probe.onload = () => {
+          const aspect = probe.naturalHeight / probe.naturalWidth;
+          const singleW = aspect > 1.1 ? 390 : aspect < 0.8 ? 460 : 420;
+          const nextH = Math.min(720, Math.max(360, Math.round(singleW * aspect)));
+          document.getElementById('cfg-width').value = singleW * 2;
+          document.getElementById('cfg-height').value = nextH;
+          rebuildFlipbook(true);
+        };
+        probe.src = first;
+      } else {
+        rebuildFlipbook(true);
+      }
+    });
+
+    document.querySelectorAll('[data-accordion]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.getElementById('panel-' + btn.dataset.accordion).classList.toggle('hidden');
+        btn.querySelector('.fa-chevron-down').classList.toggle('rotate-180');
+      });
+    });
+
+    const parser = new DocumentParser((p) => {
+      document.getElementById('sidebar-progress-box').classList.remove('hidden');
+      document.getElementById('loading-modal').classList.remove('hidden');
+      document.getElementById('modal-file-name').textContent = p.fileName;
+      document.getElementById('sidebar-progress-label').textContent = p.text;
+      document.getElementById('modal-progress-label').textContent = p.text;
+      document.getElementById('sidebar-progress-pct').textContent = p.percent + '%';
+      document.getElementById('modal-progress-pct').textContent = p.percent + '%';
+      document.getElementById('sidebar-progress-bar').style.width = p.percent + '%';
+      document.getElementById('modal-progress-bar').style.width = p.percent + '%';
+    });
+
+    async function handleFile(file) {
+      try { await parser.parseFile(file); }
+      catch (err) {
+        document.getElementById('sidebar-progress-box').classList.add('hidden');
+        document.getElementById('loading-modal').classList.add('hidden');
+        document.getElementById('file-status').textContent = err.message;
+      }
+    }
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-cyan-400'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-cyan-400'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('border-cyan-400');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+    const prevAction = () => pageFlipInstance && pageFlipInstance.flipPrev('top');
+    const nextAction = () => pageFlipInstance && pageFlipInstance.flipNext('top');
+    document.getElementById('btn-prev-side').addEventListener('click', prevAction);
+    document.getElementById('btn-next-side').addEventListener('click', nextAction);
+    document.getElementById('btn-prev-page').addEventListener('click', prevAction);
+    document.getElementById('btn-next-page').addEventListener('click', nextAction);
+
+    document.getElementById('cfg-width').addEventListener('change', () => rebuildFlipbook(false));
+    document.getElementById('cfg-height').addEventListener('change', () => rebuildFlipbook(false));
+    document.getElementById('cfg-shadows').addEventListener('change', () => rebuildFlipbook(false));
+    document.getElementById('cfg-fliptime').addEventListener('input', (e) => {
+      document.getElementById('fliptime-label').textContent = e.target.value + ' ms';
+    });
+    document.getElementById('cfg-fliptime').addEventListener('change', () => rebuildFlipbook(false));
+
+    document.getElementById('cfg-bgcolor').addEventListener('input', (e) => {
+      document.getElementById('canvas-stage').style.backgroundColor = e.target.value;
+    });
+    document.getElementById('cfg-bgimage').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { document.getElementById('canvas-stage').style.backgroundImage = `url("${r.result}")`; };
+      r.readAsDataURL(f);
+    });
+
+    document.querySelectorAll('.cover-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        coverMode = btn.dataset.cover;
+        document.querySelectorAll('.cover-btn').forEach((b) => {
+          const active = b.dataset.cover === coverMode;
+          b.className = active
+            ? 'cover-btn px-3 py-2 text-xs font-medium rounded-md bg-slate-800 text-cyan-300 border border-cyan-500/40'
+            : 'cover-btn px-3 py-2 text-xs font-medium rounded-md text-slate-400 border border-transparent';
+        });
+        rebuildFlipbook(false);
+      });
+    });
+
+    document.getElementById('cfg-zoom').addEventListener('change', (e) => {
+      document.getElementById('toolbar-zoom').classList.toggle('hidden', !e.target.checked);
+      if (!e.target.checked) { zoomLevel = 100; applyTransform(); }
+    });
+    document.getElementById('zoom-out').addEventListener('click', () => { zoomLevel = Math.max(60, zoomLevel - 10); applyTransform(); });
+    document.getElementById('zoom-in').addEventListener('click', () => { zoomLevel = Math.min(150, zoomLevel + 10); applyTransform(); });
+    document.getElementById('zoom-reset').addEventListener('click', () => { zoomLevel = 100; applyTransform(); });
+
+    document.getElementById('cfg-autoplay').addEventListener('change', (e) => {
+      if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
+      if (e.target.checked) {
+        autoplayTimer = setInterval(() => {
+          if (!pageFlipInstance) return;
+          if (pageFlipInstance.getCurrentPageIndex() >= pageFlipInstance.getPageCount() - 1) pageFlipInstance.turnToPage(0);
+          else pageFlipInstance.flipNext('top');
+        }, 4500);
+      }
+    });
+
+    document.getElementById('btn-preview').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('hidden');
+      setTimeout(resizeFlipbook, 50);
+    });
+
+    // FASE 7: Logo corporativo, enlace, fullscreen y exportación con SEO + Contraseña
+    let customBrandLogoDataUrl = '';
+    let brandLogoPosition = 'top-left';
+    const floatingLink = document.getElementById('floating-brand-link');
+    const floatingImg = document.getElementById('floating-brand-img');
+
+    document.getElementById('cfg-brand-logo').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        customBrandLogoDataUrl = r.result;
+        floatingImg.src = r.result;
+      };
+      r.readAsDataURL(f);
+    });
+    document.getElementById('cfg-brand-url').addEventListener('input', (e) => {
+      floatingLink.href = e.target.value || 'https://www.unfantasmaenelsistema.com/';
+    });
+    document.querySelectorAll('.logopos-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        brandLogoPosition = btn.dataset.logopos;
+        floatingLink.classList.toggle('left-4', brandLogoPosition === 'top-left');
+        floatingLink.classList.toggle('right-4', brandLogoPosition === 'top-right');
+        document.querySelectorAll('.logopos-btn').forEach((b) => {
+          b.className = b.dataset.logopos === brandLogoPosition
+            ? 'logopos-btn px-2 py-1 text-xs rounded bg-slate-800 text-cyan-300'
+            : 'logopos-btn px-2 py-1 text-xs rounded text-slate-400';
+        });
+      });
+    });
+    document.getElementById('cfg-pw-enable').addEventListener('change', (e) => {
+      document.getElementById('cfg-pw-value').classList.toggle('hidden', !e.target.checked);
+    });
+
+    document.getElementById('btn-fullscreen').addEventListener('click', () => {
+      const stageEl = document.getElementById('canvas-stage');
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      else if (stageEl.requestFullscreen) stageEl.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => {
+      document.getElementById('fs-icon').className =
+        'fa-solid ' + (document.fullscreenElement ? 'fa-compress' : 'fa-expand');
+    });
+
+    function hashClientPw(pw) {
+      const s = 'ghostflip::' + pw;
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return (h >>> 0).toString(16).padStart(8, '0');
+    }
+
+    function dataUrlToBlob(dataUrl, fallbackExt = 'jpg') {
+      const m = dataUrl.match(/^data:([^;,]+)?(;base64)?,(.*)$/s);
+      if (!m) return null;
+      const mime = m[1] || 'application/octet-stream';
+      const bin = atob(m[3] || '');
+      const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const ext = mime.includes('png') ? 'png' : mime.includes('wav') ? 'wav' : mime.includes('webp') ? 'webp' : fallbackExt;
+      return { blob: new Blob([u8], { type: mime }), ext };
+    }
+
+    document.getElementById('btn-export').addEventListener('click', async () => {
+      const zip = new window.JSZip();
+      const assetsFolder = zip.folder('assets');
+      const pagesFolder = assetsFolder.folder('pages');
+
+      const exportConfig = {
+        width: Number(document.getElementById('cfg-width').value) || 840,
+        height: Number(document.getElementById('cfg-height').value) || 580,
+        coverType: coverMode,
+        flippingTime: Number(document.getElementById('cfg-fliptime').value) || 700,
+        bgColor: document.getElementById('cfg-bgcolor').value || '#020617',
+        shadows: document.getElementById('cfg-shadows').checked,
+        sound: document.getElementById('cfg-sound').checked,
+        brandUrl: document.getElementById('cfg-brand-url').value || 'https://www.unfantasmaenelsistema.com/',
+        brandLogo: '',
+        brandLogoPos: brandLogoPosition,
+        seoTitle: document.getElementById('cfg-seo-title').value || 'Mi Revista Interactiva 3D',
+        seoDesc: document.getElementById('cfg-seo-desc').value || '',
+        seoKeywords: document.getElementById('cfg-seo-keywords').value || '',
+        pwEnabled: document.getElementById('cfg-pw-enable').checked,
+        pwHash: hashClientPw(document.getElementById('cfg-pw-value').value || '')
+      };
+
+      const rawPages = window.flipbookPages.length ? window.flipbookPages : [];
+      const relativePages = [];
+      rawPages.forEach((b64, idx) => {
+        const parsed = dataUrlToBlob(b64, 'jpg');
+        if (parsed) {
+          const name = `page-${idx + 1}.${parsed.ext}`;
+          pagesFolder.file(name, parsed.blob);
+          relativePages.push(`assets/pages/${name}`);
+        }
+      });
+
+      const logoSrc = customBrandLogoDataUrl || './assets/aistudio/icono_81a3db5b.png';
+      if (logoSrc.startsWith('data:')) {
+        const lBlob = dataUrlToBlob(logoSrc, 'png');
+        if (lBlob) {
+          assetsFolder.file(`logo.${lBlob.ext}`, lBlob.blob);
+          exportConfig.brandLogo = `assets/logo.${lBlob.ext}`;
+        }
+      } else {
+        try {
+          const res = await fetch(logoSrc);
+          if (res.ok) {
+            assetsFolder.file('logo.png', await res.blob());
+            exportConfig.brandLogo = 'assets/logo.png';
+          }
+        } catch {}
+      }
+
+      const audioBlob = dataUrlToBlob(createPaperFlipWavBase64(), 'wav');
+      if (audioBlob) assetsFolder.file('page-flip.wav', audioBlob.blob);
+
+      const hasPw = exportConfig.pwEnabled && (document.getElementById('cfg-pw-value').value || '').length > 0;
+      const indexHtml = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${exportConfig.seoTitle.replace(/</g, '&lt;')}</title>
+  <meta name="description" content="${exportConfig.seoDesc.replace(/"/g, '&quot;')}" />
+  <meta name="keywords" content="${exportConfig.seoKeywords.replace(/"/g, '&quot;')}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"><\/script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: ${exportConfig.bgColor}; color: #f1f5f9; font-family: system-ui, sans-serif; }
+    .stage { width: 100vw; height: 100vh; display: ${hasPw ? 'none' : 'flex'}; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
+    .logo-float { position: fixed; top: 16px; ${exportConfig.brandLogoPos === 'top-right' ? 'right: 16px;' : 'left: 16px;'} z-index: 30; width: 44px; height: 44px; padding: 6px; border-radius: 10px; border: 1px solid #334155; background: rgba(15,23,42,0.88); display: flex; align-items: center; justify-content: center; }
+    .logo-float img { width: 100%; height: 100%; object-fit: contain; }
+    .viewport { flex: 1; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    #wrap { position: relative; display: flex; align-items: center; justify-content: center; max-width: 90%; max-height: 90%; }
+    .stf__parent { position: relative; display: block; margin: 0 auto !important; user-select: none; }
+    .my-page, .page { overflow: hidden !important; box-sizing: border-box; background-color: #0f172a; }
+    .page-content { width: 100%; height: 100%; overflow: hidden !important; box-sizing: border-box; background-color: #0f172a; background-size: contain; background-position: center; background-repeat: no-repeat; }
+    .spine-shadow { position: absolute; top: 0; bottom: 0; left: 50%; width: 48px; transform: translateX(-50%); pointer-events: none; z-index: 200; background: linear-gradient(to right, rgba(2,6,23,0) 0%, rgba(2,6,23,0.2) 28%, rgba(2,6,23,0.62) 50%, rgba(2,6,23,0.2) 72%, rgba(2,6,23,0) 100%); }
+    .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); z-index: 20; width: 42px; height: 42px; border-radius: 9999px; border: 1px solid #1e293b; background: #0f172a; color: #cbd5e1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .bar { margin-top: 14px; display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-radius: 10px; border: 1px solid #1e293b; background: #0f172a; font-size: 12px; }
+  </style>
+</head>
+<body>
+  ${hasPw ? `<script>
+    (function(){
+      var exp = ${JSON.stringify(exportConfig.pwHash)};
+      function h(p){ var s='ghostflip::'+p,x=2166136261; for(var i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,16777619);} return (x>>>0).toString(16).padStart(8,'0'); }
+      var inp = window.prompt('Introduce la contraseña:');
+      if(inp !== null && h(inp) === exp) window.__ok = true;
+    })();
+  <\/script>` : ''}
+  <div id="stage" class="stage">
+    ${exportConfig.brandLogo ? `<a href="${exportConfig.brandUrl}" target="_blank" rel="noopener noreferrer" class="logo-float"><img src="${exportConfig.brandLogo}" alt="Logo" /></a>` : ''}
+    <div class="viewport" id="vp">
+      <button id="prev" class="nav-btn" style="left:12px;"><i class="fa-solid fa-chevron-left"></i></button>
+      <div id="wrap">
+        <div id="book-box" class="w-full h-full" style="width:100%;height:100%;position:relative;"><div id="book" style="width:100%;height:100%;"></div><div id="spine-shadow" class="spine-shadow" style="display:none;"></div></div>
+      </div>
+      <button id="next" class="nav-btn" style="right:12px;"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    <div class="bar">
+      <span id="counter">1 / ${Math.max(1, relativePages.length)}</span>
+      <button id="fs" style="background:none;border:0;color:#cbd5e1;cursor:pointer;"><i class="fa-solid fa-expand"></i></button>
+    </div>
+  </div>
+  <script>
+    if (${hasPw} && window.__ok) document.getElementById('stage').style.display = 'flex';
+    const PAGES = ${JSON.stringify(relativePages).replace(/</g, '\\u003c')};
+    const HOTSPOTS = ${JSON.stringify(window.hotspotsData || []).replace(/</g, '\\u003c')};
+    const CFG = ${JSON.stringify(exportConfig)};
+    const flipSound = new Audio('assets/page-flip.wav');
+    const book = document.getElementById('book'), vp = document.getElementById('vp'), wrap = document.getElementById('wrap'), spine = document.getElementById('spine-shadow');
+    const singleW = Math.max(200, Math.round(CFG.width / 2));
+    const pageH = Math.max(290, CFG.height);
+    function resizeFlipbook() {
+      const r = vp.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const ratio = Math.min(1, Math.max(240, r.width * 0.9 - 104) / (singleW * 2), Math.max(200, r.height * 0.9) / pageH);
+      wrap.style.width = Math.max(400, Math.round(singleW * 2 * ratio)) + 'px';
+      wrap.style.height = Math.max(290, Math.round(pageH * ratio)) + 'px';
+      wrap.style.aspectRatio = (singleW * 2) + ' / ' + pageH;
+    }
+    resizeFlipbook();
+    const els = PAGES.map((src, i) => {
+      const d = document.createElement('div');
+      d.className = 'page my-page';
+      d.setAttribute('data-density', CFG.coverType === 'hard' && (i === 0 || i === PAGES.length - 1) ? 'hard' : 'soft');
+      const c = document.createElement('div');
+      c.className = 'page-content';
+      c.dataset.bgSrc = src; c.dataset.bgLoaded = '0';
+      d.appendChild(c);
+      HOTSPOTS.filter((h) => h.pageIndex === i || h.page === i + 1).forEach((h) => {
+        const a = document.createElement('a');
+        a.href = h.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        a.style.cssText = 'position:absolute;left:' + h.x + '%;top:' + h.y + '%;width:' + h.width + '%;height:' + h.height + '%;opacity:0;cursor:pointer;z-index:25;display:block;';
+        a.addEventListener('mousedown', (ev) => ev.stopPropagation());
+        a.addEventListener('touchstart', (ev) => ev.stopPropagation(), { passive: true });
+        d.appendChild(a);
+      });
+      book.appendChild(d); return d;
+    });
+    function syncLazy(cur) {
+      const min = Math.max(0, cur - 1), max = Math.min(els.length - 1, cur + 2);
+      els.forEach((d, idx) => {
+        const target = d.querySelector('.page-content') || d;
+        if (idx >= min && idx <= max) { if (target.dataset.bgLoaded !== '1') { target.style.backgroundImage = 'url("' + target.dataset.bgSrc + '")'; target.dataset.bgLoaded = '1'; } }
+        else if (target.dataset.bgLoaded === '1') { target.style.backgroundImage = 'none'; target.dataset.bgLoaded = '0'; }
+      });
+    }
+    const pf = new window.St.PageFlip(book, { width: singleW, height: pageH, size: 'stretch', minWidth: 200, maxWidth: singleW, minHeight: Math.min(290, pageH), maxHeight: pageH, flippingTime: CFG.flippingTime, drawShadow: CFG.shadows, maxShadowOpacity: CFG.shadows ? 0.5 : 0, usePortrait: false, autoSize: true, showCover: true, mobileScrollSupport: false, useMouseEvents: true });
+    if (els.length) pf.loadFromHTML(els);
+    syncLazy(0);
+    pf.on('flip', (e) => { document.getElementById('counter').textContent = (e.data + 1) + ' / ' + PAGES.length; spine.style.display = (CFG.shadows && e.data > 0 && e.data < PAGES.length - 1) ? 'block' : 'none'; syncLazy(e.data); if (CFG.sound) { flipSound.currentTime = 0; flipSound.play().catch(() => {}); } });
+    document.getElementById('prev').onclick = () => pf.flipPrev('top');
+    document.getElementById('next').onclick = () => pf.flipNext('top');
+    document.getElementById('fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.getElementById('stage').requestFullscreen();
+    new ResizeObserver(() => { resizeFlipbook(); window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); }).observe(vp);
+    window.addEventListener('resize', resizeFlipbook);
+  <\/script>
+</body>
+</html>`;
+      zip.file('index.html', indexHtml);
+      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+      if (typeof window.saveAs === 'function') window.saveAs(zipBlob, 'revista_interactiva.zip');
+    });
+
+    // FASE 8: Editor de Hotspots en Vanilla JS
+    const hotspotCanvas = document.getElementById('hotspot-canvas');
+    const hotspotModal = document.getElementById('hotspot-url-modal');
+    const hotspotUrlForm = document.getElementById('hotspot-url-form');
+    const hotspotUrlInput = document.getElementById('hotspot-url-input');
+    const btnEditLinks = document.getElementById('btn-edit-links');
+    let drawState = null;
+    let pendingRect = null;
+
+    function syncHotspotAnchors() {
+      currentPageElements.forEach((el, idx) => {
+        el.querySelectorAll('.gf-hotspot-link').forEach((n) => n.remove());
+        if (linkEditMode) return;
+        window.hotspotsData.filter((h) => h.pageIndex === idx || h.page === idx + 1).forEach((h) => {
+          const a = document.createElement('a');
+          a.href = h.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+          a.className = 'gf-hotspot-link';
+          a.style.cssText = `position:absolute;left:${h.x}%;top:${h.y}%;width:${h.width}%;height:${h.height}%;opacity:0;cursor:pointer;z-index:25;display:block;`;
+          a.addEventListener('mousedown', (ev) => ev.stopPropagation());
+          a.addEventListener('touchstart', (ev) => ev.stopPropagation(), { passive: true });
+          el.appendChild(a);
+        });
+      });
+    }
+
+    function drawHotspotsOnCanvas(draft = null) {
+      if (!linkEditMode) return;
+      const totalW = Number(document.getElementById('cfg-width').value) || 840;
+      const pageH = Number(document.getElementById('cfg-height').value) || 580;
+      hotspotCanvas.width = totalW; hotspotCanvas.height = pageH;
+      const ctx = hotspotCanvas.getContext('2d');
+      ctx.clearRect(0, 0, totalW, pageH);
+      const cRect = hotspotCanvas.getBoundingClientRect();
+      if (!cRect.width) return;
+      const sx = totalW / cRect.width, sy = pageH / cRect.height;
+
+      const drawItem = (pageRect, box) => {
+        const px = (pageRect.left + (box.x / 100) * pageRect.width - cRect.left) * sx;
+        const py = (pageRect.top + (box.y / 100) * pageRect.height - cRect.top) * sy;
+        const pw = (box.width / 100) * pageRect.width * sx;
+        const ph = (box.height / 100) * pageRect.height * sy;
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.3)';
+        ctx.fillRect(px, py, pw, ph);
+        ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2;
+        ctx.strokeRect(px, py, pw, ph);
+      };
+
+      window.hotspotsData.forEach((h) => {
+        const el = currentPageElements[h.pageIndex];
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        if (r.width > 10) drawItem(r, h);
+      });
+      if (draft && currentPageElements[draft.pageIndex]) {
+        drawItem(currentPageElements[draft.pageIndex].getBoundingClientRect(), draft);
+      }
+    }
+
+    btnEditLinks.addEventListener('click', () => {
+      linkEditMode = !linkEditMode;
+      btnEditLinks.setAttribute('aria-pressed', String(linkEditMode));
+      btnEditLinks.classList.toggle('border-cyan-400', linkEditMode);
+      btnEditLinks.classList.toggle('bg-cyan-500/15', linkEditMode);
+      btnEditLinks.classList.toggle('text-cyan-300', linkEditMode);
+      hotspotCanvas.classList.toggle('hidden', !linkEditMode);
+      syncHotspotAnchors();
+      if (linkEditMode) setTimeout(() => drawHotspotsOnCanvas(), 20);
+    });
+
+    hotspotCanvas.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      const hit = currentPageElements
+        .map((el, idx) => ({ idx, rect: el.getBoundingClientRect() }))
+        .find(({ rect }) => rect.width > 10 && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom);
+      if (!hit) return;
+      drawState = { idx: hit.idx, rect: hit.rect, sx: e.clientX, sy: e.clientY, draft: null };
+    });
+
+    hotspotCanvas.addEventListener('mousemove', (e) => {
+      if (!drawState) return;
+      const r = drawState.rect;
+      const cx = Math.min(r.right, Math.max(r.left, e.clientX));
+      const cy = Math.min(r.bottom, Math.max(r.top, e.clientY));
+      const lx = Math.min(drawState.sx, cx), rx = Math.max(drawState.sx, cx);
+      const ty = Math.min(drawState.sy, cy), by = Math.max(drawState.sy, cy);
+      drawState.draft = {
+        page: drawState.idx + 1, pageIndex: drawState.idx,
+        x: ((lx - r.left) / r.width) * 100, y: ((ty - r.top) / r.height) * 100,
+        width: ((rx - lx) / r.width) * 100, height: ((by - ty) / r.height) * 100
+      };
+      drawHotspotsOnCanvas(drawState.draft);
+    });
+
+    hotspotCanvas.addEventListener('mouseup', () => {
+      if (!drawState) return;
+      const draft = drawState.draft;
+      drawState = null;
+      if (draft && draft.width >= 2 && draft.height >= 2) {
+        pendingRect = draft;
+        document.getElementById('hotspot-page-badge').textContent = 'Página ' + draft.page;
+        hotspotUrlInput.value = 'https://';
+        hotspotModal.classList.remove('hidden');
+        hotspotUrlInput.focus();
+      } else {
+        drawHotspotsOnCanvas();
+      }
+    });
+
+    document.getElementById('hotspot-cancel-btn').addEventListener('click', () => {
+      pendingRect = null; hotspotModal.classList.add('hidden'); drawHotspotsOnCanvas();
+    });
+
+    hotspotUrlForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!pendingRect) return;
+      let url = hotspotUrlInput.value.trim();
+      if (!/^(https?:\/\/|mailto:|#|\/)/i.test(url)) url = 'https://' + url;
+      window.hotspotsData.push({ ...pendingRect, url });
+      pendingRect = null; hotspotModal.classList.add('hidden');
+      drawHotspotsOnCanvas();
+    });
+
+    rebuildFlipbook(true);
+  </script>
+</body>
+</html>

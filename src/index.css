@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-display: 'Outfit', system-ui, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #020617;
+    color: #f1f5f9;
+    overflow: hidden;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom subtle scrollbar for dark cybersecurity control panel */
+.studio-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.studio-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.studio-scroll::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.7);
+  border-radius: 3px;
+}
+
+.studio-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.5);
+}
+
+/* 3D Flipbook stage mechanics */
+.flipbook-perspective {
+  perspective: 2400px;
+}
+
+.flipbook-sheet {
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: left center;
+}
+
+.flipbook-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flipbook-face-back {
+  transform: rotateY(180deg);
+}
+
+/* Subtle dot matrix canvas backdrop */
+.canvas-grid-pattern {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Nodlik StPageFlip canvas & isolated page elements */
+.stf__parent {
+  position: relative;
+  display: block;
+  margin: 0 auto !important;
+  user-select: none;
+}
+
+.stf__wrapper {
+  position: relative;
+  margin: 0 auto !important;
+}
+
+.my-page {
+  overflow: hidden !important;
+  box-sizing: border-box;
+  background-color: #0f172a;
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  user-select: none;
+}
+
+.page-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden !important;
+  box-sizing: border-box;
+}
+
+/* Realistic 3D inner paper fold spine shadow above both left & right pages */
+.gf-spine-shadow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 48px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 200;
+  background: linear-gradient(
+    to right,
+    rgba(2, 6, 23, 0) 0%,
+    rgba(2, 6, 23, 0.2) 28%,
+    rgba(2, 6, 23, 0.62) 50%,
+    rgba(2, 6, 23, 0.2) 72%,
+    rgba(2, 6, 23, 0) 100%
+  );
+}
+
+@keyframes readingProgressFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.gf-reading-progress {
+  transform-origin: left center;
+  animation-name: readingProgressFill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flipbook-sheet {
+    transition: none;
+  }
+}

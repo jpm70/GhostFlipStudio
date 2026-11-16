@@ -1,0 +1,6 @@
+{
+  "name": "GhostFlip Studio",
+  "description": "Estudio web estático para convertir documentos PDF, HTML y PPTX en revistas interactivas 3D desplegables en GitHub Pages.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
