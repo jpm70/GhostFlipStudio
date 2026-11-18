@@ -622,7 +622,7 @@ export const FlipbookStage: React.FC<FlipbookStageProps> = ({
   return (
     <div
       ref={stageRootRef}
-      className="flex flex-col items-center justify-center w-full h-full min-h-0 flex-1 relative overflow-hidden p-4 sm:p-6 transition-colors duration-300"
+      className="keep-dark flex flex-col items-center justify-center w-full h-full min-h-0 flex-1 relative overflow-hidden p-4 sm:p-6 transition-colors duration-300"
       style={{ backgroundColor: config.bgColor }}
     >
       {/* Floating Corporate Brand Logo */}

@@ -13,6 +13,7 @@ import type {
 } from './types/flipbook';
 import { DocumentParser } from './utils/documentParser';
 import { DEFAULT_LOGO, LEGACY_LOGO } from './utils/assets';
+import { useTheme } from './utils/theme';
 
 const INITIAL_CONFIG: BookConfig = {
   width: 840,
@@ -102,6 +103,7 @@ function loadPersistedConfig(): BookConfig {
 }
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const [config, setConfig] = useState<BookConfig>(() => loadPersistedConfig());
   const [uploadedDoc, setUploadedDoc] = useState<UploadedDocument | null>(null);
   const [customPages, setCustomPages] = useState<FlipbookPage[] | null>(null);
@@ -427,10 +429,22 @@ export default function App() {
                   setIsLinkEditMode(false);
                   setIsPreviewMode(true);
                 }}
+                aria-label="Previsualizar"
+                title="Previsualizar"
                 className="px-3.5 py-2 rounded-lg border border-slate-700 bg-slate-950/70 text-xs font-medium text-slate-200 hover:border-cyan-400/60 hover:text-cyan-300 transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
               >
                 <i className="fa-solid fa-expand text-xs" aria-hidden="true" />
-                <span className="hidden sm:inline">Previsualizar</span>
+                <span className="hidden xl:inline">Previsualizar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+                className="h-9 w-9 rounded-lg border border-slate-700 bg-slate-950/70 text-slate-200 hover:border-cyan-400/60 hover:text-cyan-300 transition-colors flex items-center justify-center shrink-0"
+              >
+                <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-xs`} aria-hidden="true" />
               </button>
 
               <button
