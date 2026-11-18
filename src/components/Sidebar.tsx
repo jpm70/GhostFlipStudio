@@ -7,6 +7,7 @@ import type {
   UploadedDocument,
 } from '../types/flipbook';
 import { playPageFlipSound } from '../utils/sound';
+import { DEFAULT_LOGO } from '../utils/assets';
 
 interface SidebarProps {
   config: BookConfig;
@@ -192,7 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <div className="w-11 h-11 rounded-lg bg-slate-800/80 border border-slate-700/80 p-1 flex items-center justify-center shrink-0 group-hover:border-cyan-400/60 transition-colors">
               <img
-                src="/assets/aistudio/icono_81a3db5b.png"
+                src={DEFAULT_LOGO}
                 alt="Logo Un Fantasma en el Sistema"
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
@@ -912,11 +913,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <i className="fa-solid fa-upload text-[11px]" aria-hidden="true" />
                       <span>Subir logo</span>
                     </button>
-                    {config.brandLogo !== '/assets/aistudio/icono_81a3db5b.png' && (
+                    {config.brandLogo !== DEFAULT_LOGO && (
                       <button
                         type="button"
                         onClick={() =>
-                          onChangeConfig({ brandLogo: '/assets/aistudio/icono_81a3db5b.png' })
+                          onChangeConfig({ brandLogo: DEFAULT_LOGO })
                         }
                         className="px-2.5 py-2 text-xs rounded-md border border-slate-700 bg-slate-950 text-slate-300 hover:text-cyan-300 transition-colors"
                         title="Restaurar logo por defecto"

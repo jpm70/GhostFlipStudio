@@ -7,6 +7,7 @@ import type {
   UploadedDocument,
 } from '../types/flipbook';
 import { playPageFlipSound } from '../utils/sound';
+import { DEFAULT_LOGO } from '../utils/assets';
 
 interface StPageFlipInstance {
   loadFromHTML: (items: HTMLElement[] | NodeListOf<HTMLElement>) => void;
@@ -235,7 +236,7 @@ function buildPageElement(
       ${
         page.isCover
           ? `<div class="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 p-2 flex items-center justify-center">
-               <img src="/assets/aistudio/icono_81a3db5b.png" alt="GhostFlip Logo" class="w-full h-full object-contain" />
+               <img src="${DEFAULT_LOGO}" alt="GhostFlip Logo" class="w-full h-full object-contain" />
              </div>`
           : ''
       }

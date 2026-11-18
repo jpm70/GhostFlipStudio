@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { BookConfig, FlipbookPage, HotspotItem, UploadedDocument } from '../types/flipbook';
 import { exportFlipbookZip, exportStandaloneFlipbook } from '../utils/exporter';
+import { STANDALONE_STUDIO_URL } from '../utils/assets';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -255,7 +256,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/95 flex flex-wrap items-center justify-between gap-3">
           <a
-            href="/ghostflip-fase1.html"
+            href={STANDALONE_STUDIO_URL}
             download="ghostflip-studio.html"
             className="text-xs text-slate-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5"
           >

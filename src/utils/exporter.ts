@@ -121,7 +121,8 @@ export function generateStaticFlipbookHtml(
   const hasPassword = config.passwordProtected && config.passwordValue.trim().length > 0;
   const passwordHash = hasPassword ? hashPasswordClient(config.passwordValue) : '';
 
-  const brandUrl = config.brandUrl.trim() || 'https://www.unfantasmaenelsistema.com/';
+  const rawBrandUrl = config.brandUrl.trim();
+  const brandUrl = /^https?:\/\//i.test(rawBrandUrl) ? rawBrandUrl : 'https://www.unfantasmaenelsistema.com/';
   const brandLogoPosStyle =
     config.brandLogoPosition === 'top-right' ? 'right: 16px;' : 'left: 16px;';
 
