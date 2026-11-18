@@ -12,6 +12,7 @@ import type {
   UploadedDocument,
 } from './types/flipbook';
 import { DocumentParser } from './utils/documentParser';
+import { DEFAULT_LOGO, LEGACY_LOGO } from './utils/assets';
 
 const INITIAL_CONFIG: BookConfig = {
   width: 840,
@@ -28,7 +29,7 @@ const INITIAL_CONFIG: BookConfig = {
   autoplayIntervalMs: 5000,
   zoomEnabled: true,
   zoomLevel: 100,
-  brandLogo: '/assets/aistudio/icono_81a3db5b.png',
+  brandLogo: DEFAULT_LOGO,
   brandLogoPosition: 'top-left',
   brandUrl: 'https://www.unfantasmaenelsistema.com/',
   seoTitle: 'Mi Revista Interactiva 3D — GhostFlip',
@@ -92,7 +93,9 @@ function loadPersistedConfig(): BookConfig {
     const raw = window.localStorage.getItem(CONFIG_STORAGE_KEY);
     if (!raw) return INITIAL_CONFIG;
     const parsed = JSON.parse(raw) as Partial<BookConfig>;
-    return { ...INITIAL_CONFIG, ...parsed };
+    const merged = { ...INITIAL_CONFIG, ...parsed };
+    if (merged.brandLogo === LEGACY_LOGO) merged.brandLogo = DEFAULT_LOGO;
+    return merged;
   } catch {
     return INITIAL_CONFIG;
   }

@@ -1,5 +1,7 @@
 # GhostFlip Studio
 
+🌐 **Demo en vivo:** https://unfantasmaenelsistema.github.io/GhostFlipStudio/
+
 Estudio web interactivo para convertir documentos **PDF (locales o remotos por URL)**, **PPTX** y **HTML** en revistas digitales 3D con efecto realista de paso de página, **Modo Lectura** tipo carrusel, **Editor visual de Hotspots**, **Marca Blanca / SEO**, protección por contraseña en cliente y exportación optimizada en **paquete ZIP** o **HTML único autocontenido** listo para **GitHub Pages**.
 
 ---
@@ -64,7 +66,7 @@ Estudio web interactivo para convertir documentos **PDF (locales o remotos por U
 
 - **Frontend:** React 19, TypeScript, Vite 8, Tailwind CSS v4, FontAwesome 6
 - **Motor Flipbook y parsing en cliente:** `page-flip` (`StPageFlip 2.0.7`), `pdf.js 3.11.174`, `JSZip 3.10.1`, `FileSaver.js 2.0.5`
-- **Backend opcional (carga remota de PDFs sin CORS):** Node.js 22+, Express 4
+- **Backend opcional (carga remota de PDFs sin CORS):** Node.js 22+, Express 4 (el proxy valida cada redirección contra IPs privadas)
 
 ---
 
@@ -104,8 +106,8 @@ Estudio web interactivo para convertir documentos **PDF (locales o remotos por U
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/ghostflip-studio.git
-cd ghostflip-studio
+git clone https://github.com/unfantasmaenelsistema/GhostFlipStudio.git
+cd GhostFlipStudio
 
 # 2. Instalar dependencias
 npm install
@@ -132,6 +134,7 @@ NODE_ENV=production npm start
 ## Despliegue
 
 ### Modo estático (GitHub Pages / Netlify / Vercel)
+Este repositorio se publica solo en GitHub Pages con el workflow `.github/workflows/ci.yml` (build con `GITHUB_PAGES=true`, que fija la base `/GhostFlipStudio/`). Para otro alojamiento:
 1. Ejecuta `npm run build`.
 2. Publica el contenido de la carpeta `dist/`.
 > Nota: En alojamiento puramente estático sin Node.js, la carga de archivos locales (PDF, PPTX, HTML) funciona al 100 % en el navegador y la carga de PDFs por URL usa `fetch(..., { mode: 'cors' })` directo sobre servidores que permitan CORS.
@@ -149,7 +152,7 @@ NODE_ENV=production npm start
 
 ## Variables de entorno
 
-Consulta `.env.example`. El Studio funciona sin claves API obligatorias; opcionalmente puedes definir `PORT` (por defecto `3000`).
+Consulta `.env.example`. El Studio no usa ninguna clave API; opcionalmente puedes definir `PORT` (por defecto `3000`).
 
 ---
 

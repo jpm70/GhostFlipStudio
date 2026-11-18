@@ -10,9 +10,16 @@ const __dirname = path.dirname(__filename);
 const PORT = Number(process.env.PORT || 3000);
 const MAX_REMOTE_PDF_BYTES = 50 * 1024 * 1024; // 50 MB
 const REMOTE_TIMEOUT_MS = 25000;
+const MAX_REDIRECTS = 5;
 
 function isPrivateOrLoopbackIp(ip: string): boolean {
-  const clean = ip.replace(/^::ffff:/i, '');
+  let clean = ip.replace(/^::ffff:/i, '');
+  const hexMapped = clean.match(/^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+  if (hexMapped) {
+    const hi = parseInt(hexMapped[1], 16);
+    const lo = parseInt(hexMapped[2], 16);
+    clean = `${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`;
+  }
   if (net.isIPv4(clean)) {
     const parts = clean.split('.').map(Number);
     if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return true;
@@ -140,30 +147,49 @@ async function startServer() {
     const timer = setTimeout(() => controller.abort(), REMOTE_TIMEOUT_MS);
 
     try {
-      const upstream = await fetch(safeUrl.toString(), {
-        method: 'GET',
-        redirect: 'follow',
-        signal: controller.signal,
-        headers: {
-          Accept: 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.5',
-          'User-Agent': 'GhostFlip-Studio/1.0 (+https://www.unfantasmaenelsistema.com/)',
-        },
-      });
+      // Las redirecciones se siguen a mano: cada salto se valida ANTES de pedirlo
+      // (con redirect:'follow' la petición a una IP interna ya se habría hecho).
+      let currentUrl = safeUrl;
+      let upstream: Response | null = null;
+      for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+        const response = await fetch(currentUrl.toString(), {
+          method: 'GET',
+          redirect: 'manual',
+          signal: controller.signal,
+          headers: {
+            Accept: 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.5',
+            'User-Agent': 'GhostFlip-Studio/1.0 (+https://www.unfantasmaenelsistema.com/)',
+          },
+        });
+        if (response.status >= 300 && response.status < 400) {
+          const location = response.headers.get('location');
+          await response.body?.cancel();
+          if (!location || hop === MAX_REDIRECTS) {
+            res.status(502).json({ error: 'Demasiadas redirecciones o redirección inválida.' });
+            return;
+          }
+          try {
+            currentUrl = await assertSafePublicUrl(new URL(location, currentUrl).toString());
+          } catch {
+            res.status(400).json({ error: 'Redirección hacia una dirección no permitida.' });
+            return;
+          }
+          continue;
+        }
+        upstream = response;
+        break;
+      }
+
+      if (!upstream) {
+        res.status(502).json({ error: 'No se obtuvo respuesta del servidor remoto.' });
+        return;
+      }
 
       if (!upstream.ok) {
         res.status(502).json({
           error: `El servidor remoto devolvió HTTP ${upstream.status}. Verifica que el PDF sea público.`,
         });
         return;
-      }
-
-      if (upstream.url) {
-        try {
-          await assertSafePublicUrl(upstream.url);
-        } catch {
-          res.status(400).json({ error: 'Redirección hacia una dirección no permitida.' });
-          return;
-        }
       }
 
       const contentLengthHeader = upstream.headers.get('content-length');
@@ -206,7 +232,7 @@ async function startServer() {
         return;
       }
 
-      const resolvedUrl = upstream.url ? new URL(upstream.url) : safeUrl;
+      const resolvedUrl = currentUrl;
       const fileName = extractFilename(
         resolvedUrl,
         upstream.headers.get('content-disposition'),

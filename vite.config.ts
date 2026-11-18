@@ -9,6 +9,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(() => {
   return {
+    base: process.env.GITHUB_PAGES ? '/GhostFlipStudio/' : '/',
     plugins: [
       react(),
       tailwindcss(),
