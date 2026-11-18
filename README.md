@@ -42,11 +42,11 @@ Estudio web interactivo para convertir documentos **PDF (locales o remotos por U
 - **Marca Blanca, SEO y Seguridad:**
   - Logotipo corporativo flotante (esquina superior izquierda o derecha) con URL de destino personalizable.
   - Metadatos `<title>`, `<meta description>`, `<meta keywords>` y OpenGraph inyectados en el HTML exportado.
-  - Protección opcional por contraseña verificada en el cliente mediante hash FNV-1a con sal.
+  - Protección opcional por contraseña verificada en el cliente con SHA-256 iterado (20 000 vueltas) y sal aleatoria. Es una barrera ligera: el HTML exportado contiene las páginas, así que no sustituye a un control de acceso en servidor.
   - Persistencia automática de preferencias en `localStorage` con opción de restablecimiento.
 - **Exportación dual:**
-  - **Paquete ZIP (`*.zip`)**: genera `index.html`, `assets/pages/page-*.jpg`, `assets/logo.*` y `assets/page-flip.wav`, ideal para subir directamente a GitHub Pages o cualquier servidor web.
-  - **HTML Único (`*.html`)**: compila todo el visor y los recursos en un solo archivo descargable y portable.
+  - **Paquete ZIP (`*.zip`)**: genera `index.html`, `assets/pages/page-*.jpg`, `assets/logo.*`, `assets/page-flip.min.js` y `assets/page-flip.wav`, ideal para subir directamente a GitHub Pages o cualquier servidor web.
+  - **HTML Único (`*.html`)**: compila el visor, el motor 3D, los iconos y los recursos en un solo archivo que funciona sin conexión.
 
 ---
 

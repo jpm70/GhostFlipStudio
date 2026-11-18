@@ -217,8 +217,16 @@ function buildPageElement(
   // Eliminate any residual test HTML whenever uploadedDoc is non-null or imageDataUrl is provided
   if (hasUploadedDoc || page.imageDataUrl) {
     if (page.imageDataUrl) {
-      pageDiv.dataset.bgSrc = page.imageDataUrl;
-      pageDiv.dataset.bgLoaded = '0';
+      // La imagen va en un hijo: StPageFlip reescribe style.cssText del elemento de página
+      // en cada fotograma y borraría el fondo si estuviera en pageDiv.
+      const imgLayer = document.createElement('div');
+      imgLayer.className = 'page-content';
+      imgLayer.style.cssText =
+        'position:absolute;inset:0;pointer-events:none;background-color:#0f172a;' +
+        'background-size:contain;background-position:center;background-repeat:no-repeat;';
+      imgLayer.dataset.bgSrc = page.imageDataUrl;
+      imgLayer.dataset.bgLoaded = '0';
+      pageDiv.appendChild(imgLayer);
     }
     pageDiv.appendChild(pageNumberOverlay);
     return pageDiv;

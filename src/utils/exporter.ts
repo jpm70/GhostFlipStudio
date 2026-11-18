@@ -1,5 +1,7 @@
 import type { BookConfig, FlipbookPage, HotspotItem, UploadedDocument } from '../types/flipbook';
 import { PAGE_FLIP_AUDIO_BASE64 } from './sound';
+import pageFlipSource from 'page-flip/dist/js/page-flip.browser.js?raw';
+import { buildIconCss } from './icons';
 
 function escapeHtml(value: string): string {
   return value
@@ -11,17 +13,69 @@ function escapeHtml(value: string): string {
 }
 
 /**
- * Basic deterministic client-side hash (FNV-1a 32-bit salted) so the raw
- * password string is never embedded as plain text in the exported HTML file.
+ * Hash de contraseña en cliente: SHA-256 iterado con sal aleatoria. Función AUTOCONTENIDA
+ * (sin referencias externas) para poder serializarla con toString() dentro del HTML exportado
+ * y que funcione también sin HTTPS (no usa crypto.subtle). Es una barrera ligera: el HTML
+ * exportado contiene las páginas, así que no sustituye a un control de acceso en servidor.
  */
-function hashPasswordClient(password: string): string {
-  const input = `ghostflip::${password}`;
-  let hash = 2166136261;
-  for (let i = 0; i < input.length; i++) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
+function ghostflipHash(password: string, salt: string, iterations: number): string {
+  const K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
+  function sha256(data: number[]): number[] {
+    const h = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    const bytes = data.slice();
+    const bitLen = bytes.length * 8;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    for (let i = 7; i >= 0; i--) bytes.push(i >= 4 ? 0 : (bitLen >>> (i * 8)) & 255);
+    const w: number[] = new Array(64);
+    for (let off = 0; off < bytes.length; off += 64) {
+      for (let i = 0; i < 16; i++) {
+        w[i] = (bytes[off + i * 4] << 24) | (bytes[off + i * 4 + 1] << 16) | (bytes[off + i * 4 + 2] << 8) | bytes[off + i * 4 + 3];
+      }
+      for (let i = 16; i < 64; i++) {
+        const a = w[i - 15], b = w[i - 2];
+        const s0 = ((a >>> 7) | (a << 25)) ^ ((a >>> 18) | (a << 14)) ^ (a >>> 3);
+        const s1 = ((b >>> 17) | (b << 15)) ^ ((b >>> 19) | (b << 13)) ^ (b >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+      let a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
+      for (let i = 0; i < 64; i++) {
+        const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+        const ch = (e & f) ^ (~e & g);
+        const t1 = (hh + S1 + ch + K[i] + w[i]) | 0;
+        const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+        const maj = (a & b) ^ (a & c) ^ (b & c);
+        const t2 = (S0 + maj) | 0;
+        hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+      h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+    }
+    const out: number[] = [];
+    for (let i = 0; i < 8; i++) out.push((h[i] >>> 24) & 255, (h[i] >>> 16) & 255, (h[i] >>> 8) & 255, h[i] & 255);
+    return out;
   }
-  return (hash >>> 0).toString(16).padStart(8, '0');
+  const utf8 = Array.from(new TextEncoder().encode(salt + '::' + password));
+  let digest = sha256(utf8);
+  for (let i = 1; i < iterations; i++) digest = sha256(digest.concat(utf8));
+  return digest.map((b) => (b < 16 ? '0' : '') + b.toString(16)).join('');
+}
+
+const PASSWORD_ITERATIONS = 20000;
+
+function randomSalt(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function extensionFromMime(mime: string, fallback = 'jpg'): string {
@@ -102,6 +156,8 @@ export interface GenerateHtmlOptions {
   logoPath?: string;
   audioUri?: string;
   bgImagePath?: string | null;
+  /** Ruta relativa del motor page-flip (ZIP). Si falta, se incrusta en el propio HTML. */
+  pageFlipPath?: string;
 }
 
 export function generateStaticFlipbookHtml(
@@ -119,7 +175,8 @@ export function generateStaticFlipbookHtml(
   const seoKeywords = config.seoKeywords.trim() || 'flipbook, revista digital, ghostflip';
 
   const hasPassword = config.passwordProtected && config.passwordValue.trim().length > 0;
-  const passwordHash = hasPassword ? hashPasswordClient(config.passwordValue) : '';
+  const passwordSalt = hasPassword ? randomSalt() : '';
+  const passwordHash = hasPassword ? ghostflipHash(config.passwordValue, passwordSalt, PASSWORD_ITERATIONS) : '';
 
   const rawBrandUrl = config.brandUrl.trim();
   const brandUrl = /^https?:\/\//i.test(rawBrandUrl) ? rawBrandUrl : 'https://www.unfantasmaenelsistema.com/';
@@ -152,6 +209,9 @@ export function generateStaticFlipbookHtml(
   }).replace(/</g, '\\u003c');
 
   const safeAudioUri = JSON.stringify(resolvedAudioUri);
+  const pageFlipScriptTag = options.pageFlipPath
+    ? `<script src="${escapeHtml(options.pageFlipPath)}"></script>`
+    : `<script>${pageFlipSource.replace(/<\/script/gi, '<\\/script')}</script>`;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -164,8 +224,8 @@ export function generateStaticFlipbookHtml(
   <meta property="og:title" content="${escapeHtml(seoTitle)}" />
   <meta property="og:description" content="${escapeHtml(seoDescription)}" />
   <meta property="og:type" content="website" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>${buildIconCss()}</style>
+  ${pageFlipScriptTag}
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -475,15 +535,10 @@ export function generateStaticFlipbookHtml(
       ? `<script>
     (function() {
       var expectedHash = ${JSON.stringify(passwordHash)};
-      function hashInput(pw) {
-        var s = 'ghostflip::' + pw;
-        var h = 2166136261;
-        for (var i = 0; i < s.length; i++) {
-          h ^= s.charCodeAt(i);
-          h = Math.imul(h, 16777619);
-        }
-        return (h >>> 0).toString(16).padStart(8, '0');
-      }
+      ${ghostflipHash.toString().replace(/<\/script/gi, '<\\/script')}
+      var SALT = ${JSON.stringify(passwordSalt)};
+      var ITER = ${PASSWORD_ITERATIONS};
+      var hashInput = function (pw) { return ghostflipHash(pw, SALT, ITER); };
       window.__ghostflipCheckAccess = function() {
         var attempt = window.prompt('Introduce la contraseña:');
         if (attempt !== null && hashInput(attempt) === expectedHash) {
@@ -934,7 +989,7 @@ export async function exportFlipbookZip(
 ): Promise<ZipExportResult> {
   const JSZipCtor = window.JSZip;
   if (!JSZipCtor) {
-    throw new Error('La librería JSZip no está disponible. Verifica tu conexión al CDN.');
+    throw new Error('La librería JSZip no está disponible. Recarga la página.');
   }
 
   const zip = new JSZipCtor();
@@ -998,7 +1053,10 @@ export async function exportFlipbookZip(
     }
   }
 
+  if (assetsFolder) assetsFolder.file('page-flip.min.js', pageFlipSource);
+
   const indexHtml = generateStaticFlipbookHtml(config, pages, doc, hotspots, {
+    pageFlipPath: assetsFolder ? 'assets/page-flip.min.js' : undefined,
     serializedPagesOverride: relativePages,
     logoPath,
     audioUri: audioPath || PAGE_FLIP_AUDIO_BASE64,

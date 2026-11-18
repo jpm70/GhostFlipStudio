@@ -26,6 +26,7 @@ interface PdfJsDocument {
 interface PdfJsLib {
   GlobalWorkerOptions: { workerSrc: string };
   getDocument: (params: {
+    isEvalSupported?: boolean;
     data: ArrayBuffer;
     disableWorker?: boolean;
   }) => { promise: Promise<PdfJsDocument> };
@@ -60,9 +61,6 @@ declare global {
     flipbookPages?: string[];
   }
 }
-
-const PDF_WORKER_URL =
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 function getMimeFromFilename(filename: string): string | null {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -253,10 +251,9 @@ export class DocumentParser {
   ): Promise<DocumentReadyEventDetail> {
     const pdfjsLib = window.pdfjsLib;
     if (!pdfjsLib) {
-      throw new Error('La librería pdf.js no está disponible. Verifica tu conexión al CDN.');
+      throw new Error('La librería pdf.js no está disponible. Recarga la página.');
     }
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
 
     this.emitProgress({
       active: true,
@@ -271,10 +268,10 @@ export class DocumentParser {
     let pdfDoc: PdfJsDocument;
 
     try {
-      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
     } catch {
       // Retry without Web Worker if sandbox CSP blocks external worker script
-      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer, disableWorker: true }).promise;
+      pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer, isEvalSupported: false, disableWorker: true }).promise;
     }
 
     const totalPages = pdfDoc.numPages;
@@ -354,7 +351,7 @@ export class DocumentParser {
   private async parsePptx(file: File): Promise<DocumentReadyEventDetail> {
     const JSZip = window.JSZip;
     if (!JSZip) {
-      throw new Error('La librería JSZip no está disponible. Verifica tu conexión al CDN.');
+      throw new Error('La librería JSZip no está disponible. Recarga la página.');
     }
 
     this.emitProgress({
