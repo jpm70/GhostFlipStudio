@@ -44,6 +44,7 @@ Estudio web interactivo para convertir documentos **PDF (locales o remotos por U
   - Metadatos `<title>`, `<meta description>`, `<meta keywords>` y OpenGraph inyectados en el HTML exportado.
   - Protección opcional por contraseña verificada en el cliente con SHA-256 iterado (20 000 vueltas) y sal aleatoria. Es una barrera ligera: el HTML exportado contiene las páginas, así que no sustituye a un control de acceso en servidor.
   - Persistencia automática de preferencias en `localStorage` con opción de restablecimiento.
+  - **Tema claro/oscuro** del Studio (botón en la barra superior; recuerda tu elección y, por defecto, sigue el tema del sistema). El escenario de la revista y el visor exportado conservan su paleta oscura.
 - **Exportación dual:**
   - **Paquete ZIP (`*.zip`)**: genera `index.html`, `assets/pages/page-*.jpg`, `assets/logo.*`, `assets/page-flip.min.js` y `assets/page-flip.wav`, ideal para subir directamente a GitHub Pages o cualquier servidor web.
   - **HTML Único (`*.html`)**: compila el visor, el motor 3D, los iconos y los recursos en un solo archivo que funciona sin conexión.
