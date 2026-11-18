@@ -123,6 +123,9 @@ npm run dev
 # Verificar tipos TypeScript
 npm run lint
 
+# Pruebas E2E (Playwright; la primera vez: npx playwright install chromium)
+npm run test:e2e
+
 # Compilar bundle de producción en dist/
 npm run build
 
